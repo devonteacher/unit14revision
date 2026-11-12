@@ -77,13 +77,20 @@
   A.dyslexiaOn = function () { return !!(A.data.prefs && A.data.prefs.dyslexia); };
 
   /* Hints: each quiz, practice task or sorter game gets its own small budget. */
-  A.hintBudget = function () {
-    var max = U14.config.hintsPerSession || 3, used = 0;
+  A.focusOn = function () { return !!(A.data.prefs && A.data.prefs.focus); };
+  A.superEasyOn = function () { return !!(A.data.prefs && A.data.prefs.superEasy); };
+  A.hintBudget = function (questions) {
+    var per = U14.config.hintsPerTen || 3, base = Math.max(1, Math.ceil((questions || 10) * per / 10)), used = 0;
+    function easy() { return A.superEasyOn(); }
     return {
-      max: max,
+      get max() { return easy() ? Infinity : base; },
+      get unlimited() { return easy(); },
+      get maxText() { return easy() ? "unlimited" : String(base); },
+      base: base,
       used: function () { return used; },
-      left: function () { return max - used; },
-      spend: function () { if (used >= max) return false; used++; return true; }
+      left: function () { return easy() ? Infinity : base - used; },
+      leftText: function () { return easy() ? "unlimited" : String(base - used); },
+      spend: function () { if (!easy() && used >= base) return false; used++; return true; }
     };
   };
   A.announce = function (msg) {
@@ -125,18 +132,17 @@
   ("a an the is are was were be been of to in on for and or with what whats what's how do does did i me my you your can could should would it its this that these those about tell explain please give show which when why who at as by from into than then there their them they we us our have has had not no yes if any some more most very just also difference differences between versus vs meaning mean define definition say example examples help need know want learn understand ok okay").split(" ").forEach(function (w) { STOP[w] = 1; });
 
   var SYN = {
-    pc: "computer desktop", pcs: "computer desktop", laptop: "computer", wifi: "wireless wi", "wi-fi": "wireless",
+    pc: "computer desktop", pcs: "computer desktop", laptop: "computer",
     gdpr: "data protection", dpa: "data protection", cma: "computer misuse", sla: "service level agreement",
-    dr: "disaster recovery", mfa: "multi factor authentication", "2fa": "multi factor authentication",
     marks: "mark", exam: "assessment task", test: "assessment", paper: "task", boundaries: "grade", boundary: "grade",
-    virus: "malware", antivirus: "utility malware", hackers: "misuse", hacking: "misuse", hacker: "misuse",
-    wan: "network", lan: "network", ethernet: "utp cable", cat5: "utp cable", cat6: "utp cable", cat5e: "utp cable",
-    pass: "grade", merit: "grade", distinction: "grade", essay: "explain", cloud: "cloud", ssd: "storage", hdd: "storage",
-    bills: "cost", price: "cost", cheap: "cost", expensive: "cost", budget: "cost", ict: "it", tech: "technology",
+    hackers: "misuse", hacking: "misuse", hacker: "misuse",
+    ethernet: "utp cable", cat5: "utp cable", cat6: "utp cable", cat5e: "utp cable",
+    pass: "grade", merit: "grade", distinction: "grade", essay: "explain", cloud: "cloud",
+    bills: "cost", price: "cost", cheap: "cost", expensive: "cost", ict: "it", tech: "technology",
     staff: "staff", trained: "training", train: "training", rota: "working", gdp: "data protection",
-    erd: "diagram", dfd: "data flow diagram", "d.f.d": "data flow diagram", wlan: "wireless", wap: "wireless access point",
-    nas: "network attached storage", ups: "redundancy", raid: "redundancy"
+    dfd: "data flow diagram", "d.f.d": "data flow diagram"
   };
+
 
   function stem(w) {
     if (w.length <= 3) return w;

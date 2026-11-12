@@ -3,11 +3,23 @@
   var A = U14.app, h = A.h, R = A.routes, T = U14.technique;
 
   /* ================= QUIZ ================= */
-  function buildRun(topic, count, prioritise, onlyIds) {
+  var BANK = [
+    { id: 1, title: "Quiz 1", sub: "Lifecycle, methods and key staff", topics: ["lifecycle", "methods", "roles"] },
+    { id: 2, title: "Quiz 2", sub: "Needs, organisations, diagrams and the task", topics: ["strategy", "orgs", "diagrams", "exam"] },
+    { id: 3, title: "Quiz 3", sub: "Context, ethics, the law and design", topics: ["context", "design"] },
+    { id: 4, title: "Quiz 4", sub: "Data, information, software and cloud", topics: ["data", "software"] },
+    { id: 5, title: "Quiz 5", sub: "Hardware, networks and managing services", topics: ["hardware", "manage"] }
+  ];
+  function bankIds(b) { return U14.quiz.filter(function (q) { return b.topics.indexOf(q.topic) >= 0; }).map(function (q) { return q.id; }); }
+  function bankStat(b) { var rec = (A.data.quiz.bank || {})[b.id]; return rec || null; }
+  A.quizSeen = A.quizSeen || {};
+
+  function buildRun(topic, count, prioritise, onlyIds, avoid) {
     var pool = U14.quiz.filter(function (q) { return (topic === "all" || q.topic === topic) && (!onlyIds || onlyIds.indexOf(q.id) >= 0); });
     pool = pool.map(function (q) {
       var rec = A.data.quiz.q[q.id], pr = 1;
       if (prioritise) { if (!rec) pr = 2; else if (rec.wrong >= rec.right) pr = 3; else pr = 0; }
+      if (avoid && avoid[q.id]) pr -= 10;
       return { q: q, k: pr + Math.random() * 1.2 };
     }).sort(function (a, b) { return b.k - a.k; }).map(function (x) { return x.q; });
     if (count && count < pool.length) pool = pool.slice(0, count);
@@ -21,7 +33,11 @@
   R.quiz = function (main, parts, query) {
     var topic = query.topic || "all";
     if (!U14.topics.some(function (t) { return t.id === topic; })) topic = "all";
-    if (query.go === "1") { runQuiz(main, buildRun(topic, 10, true), topic); return; }
+    if (query.bank && query.go === "1") {
+      var bk = BANK.filter(function (x) { return String(x.id) === query.bank; })[0];
+      if (bk) { runQuiz(main, buildRun("all", 0, false, bankIds(bk)), "all", { bank: bk }); return; }
+    }
+    if (query.go === "1") { runQuiz(main, buildRun(topic, 10, true), topic, { count: 10 }); return; }
 
     main.appendChild(A.pageHead("Quiz", U14.quiz.length + " questions. Choose your answer, then press Confirm answer. You will see an explanation after every answer, and a link to revise the topic. Some questions ask you to choose two or three answers, and you need all of them to score."));
     var sel = h("select", { id: "qtopic", class: "select" }, h("option", { value: "all", text: "All topics" }),
@@ -34,12 +50,23 @@
     main.appendChild(h("form", { class: "card form", onsubmit: function (e) {
       e.preventDefault();
       var run = buildRun(sel.value, parseInt(cnt.value, 10), pri.checked);
-      A.clear(main); runQuiz(main, run, sel.value);
+      A.clear(main); runQuiz(main, run, sel.value, { count: parseInt(cnt.value, 10) });
     } },
       h("div", { class: "field" }, h("label", { for: "qtopic", text: "Topic" }), sel),
       h("div", { class: "field" }, h("label", { for: "qcount", text: "How many" }), cnt),
       h("div", { class: "field check" }, pri, " ", h("label", { for: "qpri", text: "Prioritise questions I have missed or not seen yet" })),
+      h("p", { class: "small", text: "Hints: " + (U14.config.hintsPerTen || 3) + " for every 10 questions, so a 20 question quiz has " + 2 * (U14.config.hintsPerTen || 3) + ". Switch on Super Easy Mode at the top for unlimited hints." }),
       h("button", { class: "btn primary", type: "submit", text: "Start quiz" })));
+    var bankCard = h("section", { class: "card", "aria-labelledby": "bankh" }, h("h2", { id: "bankh", text: "Ready made quizzes" }),
+      h("p", { class: "small", text: "Five quizzes that cover every question between them. The questions and answers are shuffled each time you play." }));
+    var bgrid = h("div", { class: "bankgrid" });
+    BANK.forEach(function (b) {
+      var n = bankIds(b).length, st0 = bankStat(b);
+      bgrid.appendChild(h("a", { class: "bankcard", href: "#/quiz?bank=" + b.id + "&go=1" },
+        h("strong", { text: b.title }), h("span", { class: "banksub", text: b.sub }),
+        h("span", { class: "bankmeta", text: n + " questions. " + (st0 ? "Best " + st0.best + " of " + st0.n + ", played " + st0.plays + (st0.plays === 1 ? " time" : " times") : "Not tried yet") })));
+    });
+    bankCard.appendChild(bgrid); main.appendChild(bankCard);
     var st = A.topicStats(), any = false;
     var bars = h("div", { class: "card" }, h("h2", { text: "Your scores so far" }));
     U14.topics.forEach(function (t) {
@@ -58,15 +85,18 @@
 
   function answerText(q) { return q.multi ? q.right.join("; ") : q.right; }
 
-  function runQuiz(main, run, topic) {
+  function runQuiz(main, run, topic, ctx) {
+    ctx = ctx || {};
     if (!run.length) { main.appendChild(h("div", { class: "card" }, h("p", { text: "There are no questions for that choice." }), h("a", { class: "btn", href: "#/quiz", text: "Back" }))); return; }
-    var i = 0, score = 0, missed = [], byTopic = {}, answered = false, budget = A.hintBudget();
+    var i = 0, score = 0, missed = [], byTopic = {}, answered = false, budget = A.hintBudget(run.length);
     var area = h("div", { class: "quizrun" });
     main.appendChild(A.backLink("Quiz setup", "quiz"));
+    if (ctx.bank) main.appendChild(h("p", { class: "small", text: ctx.bank.title + ": " + ctx.bank.sub + "." }));
+    if (ctx.note) main.appendChild(h("p", { class: "small notebar", role: "status", text: ctx.note }));
     main.appendChild(area);
 
     function draw() {
-      A.clear(area); answered = false;
+      A.clear(area); answered = false; A.quizSeen[run[i].q.id] = 1;
       var item = run[i], q = item.q, need = item.need, multi = !!q.multi, sel = [], ruledOut = [], hinted = false;
       area.appendChild(h("div", { class: "progressbar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(run.length), "aria-valuenow": String(i) }, h("span", { style: "width:" + A.pct(i, run.length) + "%" })));
       area.appendChild(h("p", { class: "small", text: "Question " + (i + 1) + " of " + run.length + ". Score " + score }));
@@ -82,14 +112,14 @@
         list.appendChild(b); return b;
       });
 
-      var confirmBtn = h("button", { class: "btn primary", type: "button", id: "confirm", text: "Confirm answer (Enter)", onclick: confirm });
+      var confirmBtn = h("button", { class: "btn primary", type: "button", id: "confirm", text: "Confirm answer [Enter]", onclick: confirm });
       var hintBtn = h("button", { class: "btn hintbtn", type: "button", onclick: useHint });
       var hintNote = h("span", { class: "small", role: "status", "aria-live": "polite" });
       var actions = h("div", { class: "hintbar confirmrow" }, confirmBtn, hintBtn, hintNote);
       area.appendChild(list); area.appendChild(instr); area.appendChild(actions); area.appendChild(fb);
 
       function hintUpd() {
-        hintBtn.textContent = hinted ? "Hint used" : budget.left() ? "Give me a hint (" + budget.left() + " left, H)" : "No hints left";
+        hintBtn.textContent = hinted ? "Hint used" : budget.left() ? "Give me a hint [H] (" + budget.leftText() + (budget.unlimited ? "" : " left") + ")" : "No hints left";
         hintBtn.disabled = answered || hinted || !budget.left();
       }
       function refresh() {
@@ -122,7 +152,7 @@
           btns[k].appendChild(h("span", { class: "sr", text: " (ruled out by your hint)" }));
           btns[k].appendChild(h("span", { class: "tagr", "aria-hidden": "true", text: "ruled out" }));
         });
-        hintNote.textContent = "Two wrong answers are crossed out. Hints used: " + budget.used() + " of " + budget.max + ".";
+        hintNote.textContent = "Two wrong answers are crossed out. Hints used: " + budget.used() + (budget.unlimited ? " (Super Easy Mode)." : " of " + budget.max + ".");
         refresh();
         A.announce("Hint used. Two wrong answers are crossed out.");
       }
@@ -146,7 +176,7 @@
         var lead = ok ? "Correct. " : multi ? "Not quite. You found " + found + " of " + need + ". The answers are: " + answerText(q) + ". " : "Not quite. The answer is: " + q.right + ". ";
         fb.appendChild(h("p", {}, h("strong", { text: lead }), q.why));
         if (q.kb && A.kbById[q.kb]) fb.appendChild(h("p", {}, h("a", { href: "#/learn/entry/" + q.kb, text: "Revise: " + A.kbById[q.kb].term })));
-        var nextBtn = h("button", { class: "btn primary", type: "button", id: "next", text: i + 1 < run.length ? "Next question (Enter)" : "See results (Enter)", onclick: next });
+        var nextBtn = h("button", { class: "btn primary", type: "button", id: "next", text: i + 1 < run.length ? "Next question [Enter]" : "See results [Enter]", onclick: next });
         fb.appendChild(nextBtn); nextBtn.focus({ preventScroll: true });
         A.announce(ok ? "Correct" : "Incorrect. " + (multi ? "The answers are " : "The answer is ") + answerText(q));
       }
@@ -159,16 +189,30 @@
       };
     }
     function next() { i++; if (i < run.length) draw(); else finish(); }
+    function another() {
+      var t = ctx.bank ? "all" : topic, n = ctx.bank ? 10 : (ctx.count === undefined ? 10 : ctx.count);
+      var fresh = U14.quiz.filter(function (q) { return (t === "all" || q.topic === t) && !A.quizSeen[q.id]; }).length;
+      var want = n || fresh;
+      var nr = buildRun(t, n, true, null, A.quizSeen);
+      A.clear(main);
+      runQuiz(main, nr, t, { count: n, note: fresh >= Math.min(want, nr.length) ? "A new quiz of questions you have not seen this session." : "You have seen most of the questions on this topic this session, so some come round again. Try a different topic for more new ones." });
+    }
     function finish() {
       A.keyHandler = null; A.clear(area);
       var p = A.pct(score, run.length);
-      A.data.quiz.runs.push({ d: new Date().toISOString().slice(0, 10), t: topic, s: score, n: run.length, h: budget.used() });
+      var rrec = { d: new Date().toISOString().slice(0, 10), t: topic, s: score, n: run.length, h: budget.used() };
+      if (ctx.bank) {
+        rrec.b = ctx.bank.id; A.data.quiz.bank = A.data.quiz.bank || {};
+        var br = A.data.quiz.bank[ctx.bank.id] || (A.data.quiz.bank[ctx.bank.id] = { best: 0, n: run.length, plays: 0 });
+        br.plays++; br.n = run.length; if (score > br.best) br.best = score;
+      }
+      A.data.quiz.runs.push(rrec);
       if (A.data.quiz.runs.length > 40) A.data.quiz.runs.shift();
       A.save();
       var msg = p >= 80 ? "Strong result." : p >= 60 ? "Good. A little more revision will lift it." : "Keep going. Review the explanations below, then try again.";
       area.appendChild(h("div", { class: "card summary" }, h("h1", { text: "Quiz finished" }),
         h("p", { class: "bigscore", text: score + " out of " + run.length + " (" + p + "%)" }), h("p", { text: msg }),
-        h("p", { class: "small", text: "Hints used: " + budget.used() + " of " + budget.max + "." })));
+        h("p", { class: "small", text: "Hints used: " + budget.used() + (budget.unlimited ? " (Super Easy Mode)." : " of " + budget.max + ".") })));
       var tkeys = Object.keys(byTopic);
       if (tkeys.length > 1) {
         var b = h("div", { class: "card" }, h("h2", { text: "By topic" }));
@@ -187,7 +231,9 @@
       if (missed.length) act.appendChild(h("button", { class: "btn primary", type: "button", text: "Retry the " + missed.length + " I missed", onclick: function () {
         var ids = missed.map(function (x) { return x.q.id; }); A.clear(main); runQuiz(main, buildRun("all", 0, false, ids), topic);
       } }));
-      act.appendChild(h("a", { class: "btn", href: "#/quiz", text: "New quiz" }));
+      act.appendChild(h("button", { class: "btn" + (missed.length ? "" : " primary"), type: "button", id: "another", text: "Generate another quiz", onclick: another }));
+      if (ctx.bank && ctx.bank.id < BANK.length) act.appendChild(h("a", { class: "btn", href: "#/quiz?bank=" + (ctx.bank.id + 1) + "&go=1", text: "Play " + BANK[ctx.bank.id].title }));
+      act.appendChild(h("a", { class: "btn", href: "#/quiz", text: "Quiz setup" }));
       act.appendChild(h("a", { class: "btn", href: "#/progress", text: "My progress" }));
       area.appendChild(act);
       window.scrollTo(0, 0);
@@ -315,16 +361,16 @@
     }
 
     /* Hints: revealed in order, up to the session limit */
-    var hintTexts = (U14.hints && U14.hints[task.id]) || [], hb = A.hintBudget(), hintShown = 0;
+    var hintTexts = (U14.hints && U14.hints[task.id]) || [], hb = A.hintBudget(10), hintShown = 0;
     var hintList = h("ol", { class: "hintlist" });
     var hintNote = h("p", { class: "small hintnote" });
     var hintBtn = h("button", { class: "btn hintbtn", type: "button", onclick: showHint });
     var hintBox = h("div", { class: "hintbox", "aria-live": "polite" }, hintList, hintNote);
     function hintUpd() {
       var avail = Math.min(hb.max, hintTexts.length);
-      hintBtn.textContent = hintShown >= avail ? "No hints left" : "Give me a hint (" + (avail - hintShown) + " left)";
+      hintBtn.textContent = hintShown >= avail ? "No hints left" : "Give me a hint (" + (hb.unlimited ? "unlimited" : (avail - hintShown) + " left") + ")";
       hintBtn.disabled = hintShown >= avail;
-      hintNote.textContent = hintShown ? "Hints used: " + hintShown + " of " + hb.max + ". Try the hint, then write more before you check." : "";
+      hintNote.textContent = hintShown ? "Hints used: " + hintShown + (hb.unlimited ? "" : " of " + hb.max) + ". Try the hint, then write more before you check." : "";
       hintBox.style.display = hintShown ? "" : "none";
     }
     function showHint() {
@@ -333,7 +379,7 @@
       hintShown++; hintUpd();
       A.announce("Hint " + hintShown + ": " + hintTexts[hintShown - 1]);
     }
-    if (hintTexts.length) { main.appendChild(h("div", { class: "hintbar" }, hintBtn, h("span", { class: "small", text: "Have a go first. You get " + hb.max + " hints for this task." }))); main.appendChild(hintBox); hintUpd(); }
+    if (hintTexts.length) { main.appendChild(h("div", { class: "hintbar" }, hintBtn, h("span", { class: "small", text: "Have a go first. " + (hb.unlimited ? "Super Easy Mode is on, so you can use every hint." : "You get " + hb.max + " hints for this task.") }))); main.appendChild(hintBox); hintUpd(); }
 
     var ta = h("textarea", { id: "ans", class: "answer", rows: "12", "aria-label": "Your answer", placeholder: "Write your answer here. Aim for about " + task.marks * 25 + " words, with reasons and scenario facts." });
     ta.value = st.text || "";
@@ -431,7 +477,7 @@
     main.appendChild(A.backLink("All practice tasks", "practice"));
     main.appendChild(A.pageHead("Describe, benefit or implication?", "Read each statement and decide what it is. Activity 5 rewards implications: what changes, what must be done, who does it."));
     var area = h("div", { class: "quizrun" }); main.appendChild(area);
-    var deck = A.shuffle(U14.sorter), i = 0, score = 0, missed = [], answered = false, budget = A.hintBudget();
+    var deck = A.shuffle(U14.sorter), i = 0, score = 0, missed = [], answered = false, budget = A.hintBudget(deck.length);
     function draw() {
       A.clear(area); answered = false;
       var s = deck[i];
@@ -449,7 +495,7 @@
       var hintNote = h("span", { class: "small", role: "status", "aria-live": "polite" });
       var hintRow = h("div", { class: "hintbar" }, hintBtn, hintNote);
       function hintUpd() {
-        hintBtn.textContent = hinted ? "Hint used" : budget.left() ? "Give me a hint (" + budget.left() + " left, H)" : "No hints left";
+        hintBtn.textContent = hinted ? "Hint used" : budget.left() ? "Give me a hint [H] (" + budget.leftText() + (budget.unlimited ? "" : " left") + ")" : "No hints left";
         hintBtn.disabled = answered || hinted || !budget.left();
         if (answered) hintBtn.style.display = "none";
       }
@@ -461,7 +507,7 @@
         btns[ruled].classList.add("struck"); btns[ruled].disabled = true;
         btns[ruled].appendChild(h("span", { class: "sr", text: " (ruled out by your hint)" }));
         btns[ruled].appendChild(h("span", { class: "ruled", "aria-hidden": "true", text: "ruled out" }));
-        hintNote.textContent = "One wrong type is crossed out. Hints used: " + budget.used() + " of " + budget.max + ".";
+        hintNote.textContent = "One wrong type is crossed out. Hints used: " + budget.used() + (budget.unlimited ? " (Super Easy Mode)." : " of " + budget.max + ".");
         hintUpd(); A.announce("Hint used. One wrong type is crossed out.");
       }
       hintUpd();
@@ -473,7 +519,7 @@
         btns.forEach(function (b, n) { b.disabled = true; if (TYPES[n][0] === s.type) b.classList.add("right"); else if (n === k) b.classList.add("wrong"); });
         fb.className = "feedback " + (ok ? "ok" : "bad");
         fb.appendChild(h("p", {}, h("strong", { text: ok ? "Correct. " : "Not quite. It is a " + s.type + ". " }), s.why));
-        var nb = h("button", { class: "btn primary", type: "button", text: i + 1 < deck.length ? "Next (Enter)" : "See results (Enter)", onclick: next });
+        var nb = h("button", { class: "btn primary", type: "button", text: i + 1 < deck.length ? "Next [Enter]" : "See results [Enter]", onclick: next });
         fb.appendChild(nb); nb.focus({ preventScroll: true });
       }
       A.keyHandler = function (ev) {
@@ -488,7 +534,7 @@
       A.data.sorter.plays += 1; if (score > A.data.sorter.best) A.data.sorter.best = score; A.save();
       area.appendChild(h("div", { class: "card summary" }, h("h2", { text: "Finished" }), h("p", { class: "bigscore", text: score + " out of " + deck.length }),
         h("p", { text: "Your best is " + A.data.sorter.best + ". Remember: an implication always answers 'so what must happen now?'" }),
-        h("p", { class: "small", text: "Hints used: " + budget.used() + " of " + budget.max + "." })));
+        h("p", { class: "small", text: "Hints used: " + budget.used() + (budget.unlimited ? " (Super Easy Mode)." : " of " + budget.max + ".") })));
       if (missed.length) {
         var m = h("div", { class: "card" }, h("h2", { text: "Review" }));
         missed.forEach(function (s) { m.appendChild(h("div", { class: "review" }, h("p", {}, h("strong", { text: s.text })), h("p", { class: "small", text: "It is a " + s.type + ". " + s.why }))); });

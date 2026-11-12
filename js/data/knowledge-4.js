@@ -54,7 +54,7 @@
     },
     {
       id: "wap", topic: "hardware", term: "Wireless access point (WAP)",
-      aka: ["access point", "wifi", "wi-fi", "wireless", "wlan"],
+      aka: ["access point", "wireless access point", "wireless"],
       short: "A device that lets wireless devices join a wired network. It extends Wi-Fi coverage.",
       more: ["Position matters: walls and distance weaken signal.", "Use strong encryption and a separate guest network for customers."],
       example: "A shop gets one access point for the workshop and one for the shop floor.",
@@ -186,7 +186,7 @@
     },
     {
       id: "security-measures", topic: "manage", term: "Security measures (physical and technical)",
-      aka: ["security", "physical security", "technical security", "encryption", "anti malware", "multi factor authentication", "mfa", "2fa", "locks", "cctv", "protecting data", "access control"],
+      aka: ["security", "physical security", "technical security", "anti malware", "locks", "cctv", "protecting data", "access control"],
       short: "Physical measures protect equipment and places. Technical measures protect data and systems. A good design uses both, plus trained staff.",
       more: [
         "Physical: locked rooms and cabinets, cable locks, alarms, CCTV, visitor control, screen positioning.",
@@ -270,7 +270,7 @@
     },
     {
       id: "performance-metrics", topic: "manage", term: "Monitoring performance",
-      aka: ["performance", "metrics", "kpi", "monitoring", "service reports", "service levels reporting", "logs"],
+      aka: ["performance", "metrics", "monitoring", "service reports", "service levels reporting", "logs"],
       short: "Measuring how well a service is doing, for example uptime, response times, number of incidents and user satisfaction, and using it to improve.",
       more: ["Compare results to targets in the SLA.", "Monitoring staff and systems must follow privacy law and be clearly explained."],
       example: "A monthly report: 99.8% uptime, 14 incidents, average fix time 5 hours.",

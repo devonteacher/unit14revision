@@ -326,7 +326,7 @@
 
   /* ---------------- GUIDE ---------------- */
   R.guide = function (main) {
-    var max = U14.config.hintsPerSession || 3;
+    var per = U14.config.hintsPerTen || 3;
     function sect(title, intro) { var c = h("section", { class: "card guide" }, h("h2", { text: title })); if (intro) c.appendChild(h("p", { text: intro })); main.appendChild(c); return c; }
     function table(head, rows, cls) {
       return h("div", { class: "tablewrap" }, h("table", { class: "gtable " + (cls || "") },
@@ -361,13 +361,14 @@
       ["See how I am doing", link("My progress", "progress"), "Scores by topic and what to revise next."]
     ]));
 
-    var c3 = sect("Hints", "Stuck? Ask for a hint. You get " + max + " hints each time you start a quiz, open a practice task or play the sorter game. Leave and come back and you start again with " + max + ". Have a go first, then use them when you need them.");
+    var c3 = sect("Hints", "Stuck? Ask for a hint. You get " + per + " hints for every 10 questions, so a 10 question quiz has " + per + " and a 20 question quiz has " + per * 2 + ". A practice task has up to " + per + ". Leave and come back and you start again. Have a go first, then use them when you need them.");
     c3.appendChild(table(["Where", "What a hint does", "How to use it"], [
       ["Quiz", "Crosses out two wrong answers. One hint per question.", ["Press ", h("strong", { text: "Give me a hint" }), " or the ", kbd("H"), " key before you answer."]],
       ["Practice", "Shows a nudge to start or improve your answer. They come in order, from a gentle push to a stronger pointer.", ["Press ", h("strong", { text: "Give me a hint" }), " above the answer box. Your hints stay on screen while you write."]],
       ["Describe, benefit or implication game", "Crosses out one wrong type.", ["Press ", h("strong", { text: "Give me a hint" }), " or the ", kbd("H"), " key."]]
     ]));
-    c3.appendChild(h("p", { class: "small", text: "Your quiz result shows how many hints you used, so you can see how much you needed them." }));
+    c3.appendChild(h("p", { text: "Need more help? Switch on Super Easy Mode in the bar at the top. Hints become unlimited. Switch it off again to go back to the normal number. It starts off." }));
+    c3.appendChild(h("p", { class: "small", text: "On buttons, a key in square brackets such as [H] is the key you can press instead. A number in round brackets such as (2 left) is how many hints you have left. Your quiz result shows how many hints you used." }));
 
     var cg = sect("Examiner guidance", "Examiners write a report after every series. They say the same things again and again. The Examiner guidance button at the top turns that advice on or off.");
     cg.appendChild(table(["On a practice task it shows", "Why it helps"], [
@@ -400,7 +401,8 @@
       ["Theme list", "Light, Cream or Dark. Cream is easier on the eyes for some people."],
       ["Dyslexia friendly", "Switches to a plainer typeface with wider spacing, taller lines, shorter lines of text and a soft cream background. It stays on until you switch it off."],
       ["Examiner guidance", "Switches the examiner advice on or off. See the section above."],
-      ["A− and A+", "Makes all the text smaller or larger."],
+      ["Focus mode", "Dims the title bar, menu and footer so only the page you are working on stands out. Press Escape or the button at the bottom of the screen to leave it."],
+      ["Text size", ["Use your browser. Press ", kbd("Ctrl"), " and ", kbd("+"), " to zoom in, ", kbd("Ctrl"), " and ", kbd("-"), " to zoom out, ", kbd("Ctrl"), " and ", kbd("0"), " to reset. On a Mac use ", kbd("Cmd"), "."]],
     ]));
 
     var c7 = sect("Your progress");

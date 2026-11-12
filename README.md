@@ -9,16 +9,16 @@ It was built for the Cyber and Digital Technologies faculty at Exeter College to
 | Mode | What it does |
 | --- | --- |
 | Ask | Type a question in your own words. A built in search matches it to the revision bank. Handles typos, "X or Y?", "difference between X and Y", "quiz me on ..." and "flashcards for ...". |
-| Learn | 155 short entries across 13 topics, each with a plain explanation, bullet points, an example and a link to the spec section. Four small visuals (lifecycle, value chain, three Vs, cloud responsibility table). |
+| Learn | 225 short entries across 13 topics, each with a plain explanation, bullet points, an example and a link to the spec section. Four small visuals (lifecycle, value chain, three Vs, cloud responsibility table). |
 | Flashcards | Flip cards by topic. Cards marked "still learning" come up more often. |
-| Quiz | 127 questions (17 ask for two or three answers) with a Confirm answer step, an explanation after every answer, topic filters and retry missed questions. |
+| Quiz | 127 questions (17 ask for two or three answers) with a Confirm answer step, an explanation after every answer, topic filters, retry missed questions, a Generate another quiz button and five ready made quizzes with best scores. |
 | Practice | 17 written tasks (theory, Quay Cycles mini activities, a Jaten Part A planning task). Instant feedback shows which expected points are missing, highlights scenario facts, technical terms and reasoning words, then a self mark checklist and a model answer. Also a game that sorts statements into describe, benefit or implication. |
 | Start here | A two minute guide to every part of the site, including how hints and examiner guidance work. |
 | Past papers | Eight scenario walkthroughs with what to watch for and the lessons from examiner reports, plus the themes that repeat. |
 | Exam coach | Task structure and time plan, a guide to each activity, an Examiner reports page by activity, command words, common mistakes, a checklist adapted from the faculty checklist, and sentence starters. |
 | Progress | Scores by topic, what to revise next, export and import of progress. Saved only in the student's own browser. |
 
-Other features: a Dyslexia friendly switch (plain typeface, wider spacing, cream background, shorter lines), hints (three per quiz, practice task or sorter game, set by `hintsPerSession` in `js/config.js`), an Examiner guidance switch that shows the command word, an answer plan and examiner report messages on every practice task (content in `js/data/guidance.js` and `js/data/hints.js`), three themes (light, cream, dark), text size buttons, keyboard control (keys 1 to 4 in the quiz, space to flip cards), skip link, works in an iframe.
+Other features: a Dyslexia friendly switch (plain typeface, wider spacing, cream background, shorter lines), hints (three per ten quiz questions, so 6 for a 20 question quiz, set by `hintsPerTen` in `js/config.js`, with a Super Easy Mode switch for unlimited hints), a Focus mode switch that dims everything except the page content, an animated Welcome page (`js/views-welcome.js`), five ready made quizzes plus a Generate another quiz button after every quiz, an Examiner guidance switch that shows the command word, an answer plan and examiner report messages on every practice task (content in `js/data/guidance.js` and `js/data/hints.js`), three themes (light, cream, dark), keyboard control (keys 1 to 4 in the quiz, space to flip cards), skip link, works in an iframe.
 
 ## Quick start
 
@@ -80,7 +80,7 @@ Everything students see lives in plain text files you can edit in any editor. Af
 | File | What is in it |
 | --- | --- |
 | `js/config.js` | Title, college name, version, the assessment lock, the 13 topics and the suggested questions on the Ask page. |
-| `js/data/knowledge-1.js` to `knowledge-4.js` | The revision bank. Each entry is one `kb.push({...})` block. |
+| `js/data/knowledge-1.js` to `knowledge-6.js` | The revision bank. Each entry is one `kb.push({...})` block. |
 | `js/data/quiz.js` | Quiz questions. One line each: topic, question, right answer, three wrong answers, explanation, entry to revise. |
 | `js/data/practice.js` | Practice tasks, the Quay Cycles and Jaten scenarios, and the sorter statements. |
 | `js/data/papers.js` | Past paper walkthroughs and the repeating examiner themes. |

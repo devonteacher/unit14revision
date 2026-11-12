@@ -7,7 +7,7 @@ const fs = require("fs");
 const path = require("path");
 global.window = global;
 const root = path.resolve(__dirname, "..");
-const files = ["config", "data/knowledge-1", "data/knowledge-2", "data/knowledge-3", "data/knowledge-4", "data/quiz", "data/practice", "data/papers", "data/technique", "data/hints", "data/guidance"];
+const files = ["config", "data/knowledge-1", "data/knowledge-2", "data/knowledge-3", "data/knowledge-4", "data/knowledge-5", "data/knowledge-6", "data/quiz", "data/practice", "data/papers", "data/technique", "data/hints", "data/guidance"];
 files.forEach(f => { (0, eval)(fs.readFileSync(path.join(root, "js", f + ".js"), "utf8")); });
 
 let problems = 0;

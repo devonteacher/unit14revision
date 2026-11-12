@@ -176,7 +176,7 @@
       h("ul", {}, weakList.map(function (t) { return h("li", {}, h("a", { href: "#/learn/" + t.id, text: t.name }), " ", h("a", { href: "#/quiz?topic=" + t.id + "&go=1", text: "(quiz)" })); }))));
     if (runs.length) {
       main.appendChild(h("section", { class: "card" }, h("h2", { text: "Recent quizzes" }),
-        h("ul", {}, runs.slice(-8).reverse().map(function (r) { return h("li", { text: r.d + ": " + (r.t === "all" ? "All topics" : U14.topicName(r.t)) + ", " + r.s + " out of " + r.n }); }))));
+        h("ul", {}, runs.slice(-8).reverse().map(function (r) { return h("li", { text: r.d + ": " + (r.b ? "Ready made quiz " + r.b : r.t === "all" ? "All topics" : U14.topicName(r.t)) + ", " + r.s + " out of " + r.n }); }))));
     }
     var imp = h("input", { type: "file", accept: "application/json,.json", class: "sr", id: "imp", onchange: function () {
       var f = imp.files && imp.files[0]; if (!f) return;

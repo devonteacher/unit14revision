@@ -7,13 +7,14 @@ U14.config = {
   subtitle: "BTEC Level 3 IT: IT Service Delivery",
   college: "Exeter College",
   faculty: "Cyber & Digital Technologies",
-  version: "1.0",
+  version: "1.1",
   updated: "November 2026",
   storageKey: "u14rb_v1",
 
   /* HINTS
-     How many hints a student can use in one quiz, one practice task or one sorter game. */
-  hintsPerSession: 3,
+     Hints are given per ten questions. 3 per 10 means a 10 question quiz has 3 hints, a 20 question quiz has 6.
+     A practice task always has up to 3 hints. Super Easy Mode in the header makes hints unlimited. */
+  hintsPerTen: 3,
 
   /* EXAMINER GUIDANCE
      The Examiner guidance switch in the header shows how to answer each practice task.
