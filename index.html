@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Standalone revision tool for BTEC Level 3 IT Unit 14 IT Service Delivery. No sign in, no AI, works offline.">
+<title>Unit 14 Revision Bot</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">U14</span>
+    <div class="brand-text"><strong id="site-title">Unit 14 Revision Bot</strong><span id="site-sub">Exeter College</span></div>
+  </div>
+  <div class="controls" id="controls"></div>
+</header>
+<nav id="nav" aria-label="Main">
+  <a href="#/home" data-route="home">Home</a>
+  <a href="#/ask" data-route="ask">Ask</a>
+  <a href="#/learn" data-route="learn">Learn</a>
+  <a href="#/cards" data-route="cards">Flashcards</a>
+  <a href="#/quiz" data-route="quiz">Quiz</a>
+  <a href="#/practice" data-route="practice">Practice</a>
+  <a href="#/papers" data-route="papers">Past papers</a>
+  <a href="#/coach" data-route="coach">Exam coach</a>
+  <a href="#/progress" data-route="progress">Progress</a>
+</nav>
+<main id="main" tabindex="-1">
+  <noscript><div class="card"><h1>JavaScript is needed</h1><p>This revision tool runs in your browser and needs JavaScript switched on.</p></div></noscript>
+</main>
+<footer class="site-footer"><p id="footer-text"></p></footer>
+<div id="live" class="sr" aria-live="polite" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/data/knowledge-1.js"></script>
+<script src="js/data/knowledge-2.js"></script>
+<script src="js/data/knowledge-3.js"></script>
+<script src="js/data/knowledge-4.js"></script>
+<script src="js/data/quiz.js"></script>
+<script src="js/data/practice.js"></script>
+<script src="js/data/papers.js"></script>
+<script src="js/data/technique.js"></script>
+<script src="js/core.js"></script>
+<script src="js/views-learn.js"></script>
+<script src="js/views-test.js"></script>
+<script src="js/views-exam.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
