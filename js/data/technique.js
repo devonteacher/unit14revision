@@ -4,6 +4,7 @@
 
   T.commandWords = [
     { word: "Identify / State", depth: "Short", means: "Name it. One short phrase or sentence.", example: "State one factor: scalability.", trap: "Writing a paragraph. You get no more marks." },
+    { word: "Define", depth: "Short to medium", means: "Give the exact meaning, in words someone outside IT could follow.", example: "Marketing and sales: the service that promotes the shops and takes online orders.", trap: "Using jargon, or giving only the name of the service." },
     { word: "Outline", depth: "Short to medium", means: "Give the main points without detail.", example: "Outline the strategy: needs, priorities, reasons.", trap: "Missing the reasons that make it an outline of a strategy." },
     { word: "Describe", depth: "Medium", means: "Say what it is or what it is like, with detail.", example: "Describe a network diagram: devices, links, labels.", trap: "Giving only a title and no detail." },
     { word: "Explain", depth: "Medium to long", means: "Give the point and the reason or effect. Use because, so, which means.", example: "Explain why backups matter: copies kept apart, so data can be restored after a failure.", trap: "Stating a fact without a reason." },
@@ -12,6 +13,7 @@
     { word: "Analyse", depth: "Long", means: "Break it into parts and show how they connect, with reasons.", example: "Training time affects opening hours, which affects cost.", trap: "Describing each part without links or consequences." },
     { word: "Evaluate", depth: "Long", means: "Weigh strengths and weaknesses and reach a judgement with a reason.", example: "Cloud is more scalable but needs internet, so a backup line is essential.", trap: "Only listing good points, or ending without a decision." },
     { word: "Justify", depth: "Medium to long", means: "Give reasons that support your choice.", example: "I chose SaaS because Dan works only two days a week.", trap: "Repeating the choice instead of giving a reason." },
+    { word: "Plan", depth: "Medium", means: "Set out what you will do and in what order, with reasons.", example: "Research hardware first, then software, then data, then law.", trap: "A list of topics with no method, order or reason." },
     { word: "Design", depth: "Long", means: "Produce a plan or model with detail, choices and reasons.", example: "A network diagram plus a table of devices and why each was chosen.", trap: "Listing products with no reasons or links to the need." }
   ];
 

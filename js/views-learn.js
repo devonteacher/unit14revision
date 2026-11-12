@@ -29,15 +29,17 @@
       h("h1", { text: cfg.title }),
       h("p", { class: "intro", text: cfg.subtitle + ". Ask questions, learn the key ideas, test yourself and practise the exam technique. No sign in. Nothing leaves your device." }),
       h("div", { class: "hero-actions" },
-        h("a", { class: "btn primary", href: "#/ask", text: "Ask a question" }),
+        h("a", { class: "btn primary", href: "#/guide", text: "Start here" }),
+        h("a", { class: "btn", href: "#/ask", text: "Ask a question" }),
         h("a", { class: "btn", href: "#/quiz", text: "Take a quiz" }),
         h("a", { class: "btn", href: "#/practice", text: "Practise an answer" }))));
 
     var tiles = [
+      ["guide", "Start here", "A two minute guide to every part of the site, plus how hints work."],
       ["ask", "Ask", "Type a question in your own words and get a short, clear answer from the revision bank."],
       ["learn", "Learn", "Browse all " + U14.kb.length + " topics by theme, with examples and links to the spec."],
       ["cards", "Flashcards", "Flip through key terms and mark what you know and what you are still learning."],
-      ["quiz", "Quiz", U14.quiz.length + " multiple choice questions with explanations. Choose a topic or mix them."],
+      ["quiz", "Quiz", U14.quiz.length + " questions with explanations, including some that ask for two or three answers. Choose a topic or mix them."],
       ["practice", "Practice", "Write an answer, get instant feedback on what is missing, then self mark against a checklist."],
       ["papers", "Past papers", "See how each scenario worked and the lessons from examiner reports."],
       ["coach", "Exam coach", "Command words, time plan, activity guides, common mistakes and a checklist."],
@@ -320,5 +322,100 @@
       else if (ev.key === "1" && flipped) mark(1);
       else if (ev.key === "2" && flipped) mark(2);
     };
+  };
+
+  /* ---------------- GUIDE ---------------- */
+  R.guide = function (main) {
+    var max = U14.config.hintsPerSession || 3;
+    function sect(title, intro) { var c = h("section", { class: "card guide" }, h("h2", { text: title })); if (intro) c.appendChild(h("p", { text: intro })); main.appendChild(c); return c; }
+    function table(head, rows, cls) {
+      return h("div", { class: "tablewrap" }, h("table", { class: "gtable " + (cls || "") },
+        h("thead", {}, h("tr", {}, head.map(function (x) { return h("th", { scope: "col", text: x }); }))),
+        h("tbody", {}, rows.map(function (r) { return h("tr", {}, r.map(function (cell, k) { return k === 0 ? h("th", { scope: "row" }, cell) : h("td", {}, cell); })); }))));
+    }
+    function link(label, path) { return h("a", { href: "#/" + path, text: label }); }
+    function kbd(t) { return h("kbd", { text: t }); }
+
+    main.appendChild(A.pageHead("Start here", "A two minute guide to the site. It works on a phone, a tablet and a computer, with no sign in and no internet needed once it has loaded."));
+
+    var c1 = sect("Your first 20 minutes");
+    c1.appendChild(h("ol", { class: "flow" }, [
+      ["1", "Learn", "Pick a topic and read it.", "learn", "Open Learn"],
+      ["2", "Flip", "Test your memory with flashcards.", "cards", "Open Flashcards"],
+      ["3", "Quiz", "Ten questions on the same topic.", "quiz", "Open Quiz"],
+      ["4", "Write", "Answer one practice task and check it.", "practice", "Open Practice"]
+    ].map(function (st) {
+      return h("li", { class: "flowstep" }, h("span", { class: "flownum", "aria-hidden": "true", text: st[0] }), h("strong", { text: st[1] }), h("span", { text: st[2] }), link(st[4], st[3]));
+    })));
+    c1.appendChild(h("p", { class: "small", text: "Then repeat with a new topic. Little and often works better than one long session." }));
+
+    var c2 = sect("Where do I go?");
+    c2.appendChild(table(["I want to", "Go to", "What happens"], [
+      ["Get a quick answer", link("Ask", "ask"), "Type a question in your own words. You get a short answer, an example and links to revise more."],
+      ["Read about a topic", link("Learn", "learn"), "All " + U14.kb.length + " topics in 13 themes, each with an example and the specification reference."],
+      ["Remember key terms", link("Flashcards", "cards"), "Flip a card, then mark it Got it or Still learning. The cards you miss come back."],
+      ["Test myself", link("Quiz", "quiz"), U14.quiz.length + " questions. Pick an answer, press Confirm, then read the explanation. Some ask for two or three answers."],
+      ["Write an answer and get feedback", link("Practice", "practice"), "Write, check, self mark, then compare with a model answer."],
+      ["See how real tasks worked", link("Past papers", "papers"), "Past, sample and practice scenarios, and what examiners said."],
+      ["Learn how to answer", link("Exam coach", "coach"), "Command words, a time plan, guides for each activity, what examiners report, and a checklist."],
+      ["See how I am doing", link("My progress", "progress"), "Scores by topic and what to revise next."]
+    ]));
+
+    var c3 = sect("Hints", "Stuck? Ask for a hint. You get " + max + " hints each time you start a quiz, open a practice task or play the sorter game. Leave and come back and you start again with " + max + ". Have a go first, then use them when you need them.");
+    c3.appendChild(table(["Where", "What a hint does", "How to use it"], [
+      ["Quiz", "Crosses out two wrong answers. One hint per question.", ["Press ", h("strong", { text: "Give me a hint" }), " or the ", kbd("H"), " key before you answer."]],
+      ["Practice", "Shows a nudge to start or improve your answer. They come in order, from a gentle push to a stronger pointer.", ["Press ", h("strong", { text: "Give me a hint" }), " above the answer box. Your hints stay on screen while you write."]],
+      ["Describe, benefit or implication game", "Crosses out one wrong type.", ["Press ", h("strong", { text: "Give me a hint" }), " or the ", kbd("H"), " key."]]
+    ]));
+    c3.appendChild(h("p", { class: "small", text: "Your quiz result shows how many hints you used, so you can see how much you needed them." }));
+
+    var cg = sect("Examiner guidance", "Examiners write a report after every series. They say the same things again and again. The Examiner guidance button at the top turns that advice on or off.");
+    cg.appendChild(table(["On a practice task it shows", "Why it helps"], [
+      ["The command word and its common trap", "Explain, Evaluate and Analyse need different answers. Check the word before you write."],
+      ["A four step plan for the answer", "You know what to write first, next and last."],
+      ["What examiner reports say about it", "You see the mistakes that lost marks for other students."]
+    ]));
+    cg.appendChild(h("p", {}, "For every activity at once, open ", link("Exam coach, Examiner reports", "coach/reports"), "."));
+
+    var c4 = sect("How practice feedback works");
+    c4.appendChild(h("ol", { class: "steps" }, [
+      "Write your answer. It saves on this device as you type.",
+      "Press Check my answer. You see which expected points your answer covers.",
+      "Read your answer, marked up in colour. Aim for plenty of all three colours.",
+      "Tick the self mark checklist. Be honest, only tick what is clearly there.",
+      "Show the model answer and compare. Yours can be different. Look at how each point has a reason."
+    ].map(function (t) { return h("li", { text: t }); })));
+    c4.appendChild(h("p", { class: "legend" }, h("mark", { class: "hl-fact", text: "scenario fact" }), " ", h("mark", { class: "hl-term", text: "technical term" }), " ", h("mark", { class: "hl-conn", text: "reasoning word" })));
+    c4.appendChild(h("p", { class: "small", text: "The checker looks for key words. It cannot judge how good your thinking is. Use it with the checklist and the model answer, and show your work to your tutor." }));
+
+    var c5 = sect("Keyboard shortcuts");
+    c5.appendChild(table(["Where", "Keys"], [
+      ["Quiz", [kbd("1"), " to ", kbd("4"), " pick an answer (up to ", kbd("6"), " on choose two or three questions), ", kbd("Enter"), " to confirm it, ", kbd("H"), " for a hint, ", kbd("Enter"), " again for the next question"]],
+      ["Flashcards", [kbd("Space"), " to flip, ", kbd("1"), " for Still learning, ", kbd("2"), " for Got it"]],
+      ["Describe, benefit or implication", [kbd("1"), " to ", kbd("3"), " choose a type, ", kbd("H"), " for a hint, ", kbd("Enter"), " for the next statement"]]
+    ]));
+
+    var c6 = sect("Make it comfortable");
+    c6.appendChild(table(["Control", "What it does"], [
+      ["Theme list", "Light, Cream or Dark. Cream is easier on the eyes for some people."],
+      ["Dyslexia friendly", "Switches to a plainer typeface with wider spacing, taller lines, shorter lines of text and a soft cream background. It stays on until you switch it off."],
+      ["Examiner guidance", "Switches the examiner advice on or off. See the section above."],
+      ["A− and A+", "Makes all the text smaller or larger."],
+    ]));
+
+    var c7 = sect("Your progress");
+    c7.appendChild(h("ul", {}, [
+      "Scores, flashcards and practice drafts are saved in this browser on this device. There is no account and nothing is sent anywhere.",
+      "If you clear your browser data, or use a different device or browser, your progress will not be there.",
+      ["On the ", link("My progress", "progress"), " page you can save your progress to a file and load it back on another device."],
+      "On a shared computer, use the Reset button on the progress page when you finish."
+    ].map(function (t) { return h("li", {}, t); })));
+
+    var c8 = sect("Using it fairly");
+    c8.appendChild(h("p", { text: "The real Part A research and Part B set task must be your own work, done without help from teachers or tools while the live assessment is open. Use this site to learn the content and to practise on past, sample and practice papers. Your tutor will tell you when you must not use it." }));
+    main.appendChild(h("div", { class: "row-actions" },
+      h("a", { class: "btn primary", href: "#/learn", text: "Start with a topic" }), " ",
+      h("a", { class: "btn", href: "#/quiz", text: "Take a quiz" }), " ",
+      h("a", { class: "btn", href: "#/home", text: "Back to home" })));
   };
 })();

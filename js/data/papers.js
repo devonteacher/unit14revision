@@ -139,12 +139,12 @@
 
   /* Messages that repeat across the examiner reports in this folder */
   U14.technique.reportThemes = [
-    { theme: "Using the scenario", detail: "Generic answers that could be about any organisation score low. Name the people, places, numbers and problems from the brief in every activity." },
-    { theme: "Activity 3 data and information", detail: "Hardware gets covered. Information and data requirements get missed, or the data flows and links between data are unclear or wrong." },
-    { theme: "Activity 4 evaluation", detail: "Learners drift into future developments or only describe. Evaluate the whole system, compare with alternatives and give a reasoned choice." },
-    { theme: "Activity 5 implications", detail: "The weakest activity in every series here. Learners explain what they built instead of what will happen to the organisation. Cover implementing, staff, customers and assets, with constraints and change." },
-    { theme: "Responding to change", detail: "Show how the solution copes with growth, new services or changes in demand." },
-    { theme: "Legislation and specialist needs", detail: "Name the laws that matter and link each to an action. Include specialist equipment for the sector." },
-    { theme: "Catalogue clarity", detail: "Write service names and descriptions that a non IT specialist could understand, for each function in the template." }
+    { theme: "Using the scenario", acts: [1, 2, 3, 4, 5], detail: "Generic answers that could be about any organisation score low. Name the people, places, numbers and problems from the brief in every activity." },
+    { theme: "Activity 3 data and information", acts: [3], detail: "Hardware gets covered. Information and data requirements get missed, or the data flows and links between data are unclear or wrong." },
+    { theme: "Activity 4 evaluation", acts: [4], detail: "Learners drift into future developments or only describe. Evaluate the whole system, compare with alternatives and give a reasoned choice." },
+    { theme: "Activity 5 implications", acts: [5], detail: "The weakest activity in every series here. Learners explain what they built instead of what will happen to the organisation. Cover implementing, staff, customers and assets, with constraints and change." },
+    { theme: "Responding to change", acts: [3, 4, 5], detail: "Show how the solution copes with growth, new services or changes in demand." },
+    { theme: "Legislation and specialist needs", acts: [1, 3, 5], detail: "Name the laws that matter and link each to an action. Include specialist equipment for the sector." },
+    { theme: "Catalogue clarity", acts: [2], detail: "Write service names and descriptions that a non IT specialist could understand, for each function in the template." }
   ];
 })();

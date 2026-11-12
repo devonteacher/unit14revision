@@ -12,7 +12,9 @@
     }).sort(function (a, b) { return b.k - a.k; }).map(function (x) { return x.q; });
     if (count && count < pool.length) pool = pool.slice(0, count);
     return A.shuffle(pool).map(function (q) {
-      return { q: q, opts: A.shuffle([{ t: q.right, ok: true }].concat(q.wrong.map(function (w) { return { t: w, ok: false }; }))) };
+      var rights = q.multi ? q.right : [q.right];
+      var opts = rights.map(function (t) { return { t: t, ok: true }; }).concat(q.wrong.map(function (w) { return { t: w, ok: false }; }));
+      return { q: q, need: rights.length, opts: A.shuffle(opts) };
     });
   }
 
@@ -21,7 +23,7 @@
     if (!U14.topics.some(function (t) { return t.id === topic; })) topic = "all";
     if (query.go === "1") { runQuiz(main, buildRun(topic, 10, true), topic); return; }
 
-    main.appendChild(A.pageHead("Quiz", U14.quiz.length + " multiple choice questions. You will see an explanation after every answer, and a link to revise the topic."));
+    main.appendChild(A.pageHead("Quiz", U14.quiz.length + " questions. Choose your answer, then press Confirm answer. You will see an explanation after every answer, and a link to revise the topic. Some questions ask you to choose two or three answers, and you need all of them to score."));
     var sel = h("select", { id: "qtopic", class: "select" }, h("option", { value: "all", text: "All topics" }),
       U14.topics.map(function (t) {
         var n = U14.quiz.filter(function (q) { return q.topic === t.id; }).length;
@@ -54,65 +56,119 @@
   }
   A.barRow = barRow;
 
+  function answerText(q) { return q.multi ? q.right.join("; ") : q.right; }
+
   function runQuiz(main, run, topic) {
     if (!run.length) { main.appendChild(h("div", { class: "card" }, h("p", { text: "There are no questions for that choice." }), h("a", { class: "btn", href: "#/quiz", text: "Back" }))); return; }
-    var i = 0, score = 0, missed = [], byTopic = {}, answered = false;
+    var i = 0, score = 0, missed = [], byTopic = {}, answered = false, budget = A.hintBudget();
     var area = h("div", { class: "quizrun" });
     main.appendChild(A.backLink("Quiz setup", "quiz"));
     main.appendChild(area);
 
     function draw() {
       A.clear(area); answered = false;
-      var item = run[i], q = item.q;
+      var item = run[i], q = item.q, need = item.need, multi = !!q.multi, sel = [], ruledOut = [], hinted = false;
       area.appendChild(h("div", { class: "progressbar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(run.length), "aria-valuenow": String(i) }, h("span", { style: "width:" + A.pct(i, run.length) + "%" })));
       area.appendChild(h("p", { class: "small", text: "Question " + (i + 1) + " of " + run.length + ". Score " + score }));
       area.appendChild(h("span", { class: "tag", style: "--accent:" + A.topicColour(q.topic), text: U14.topicName(q.topic) }));
+      if (multi) area.appendChild(h("span", { class: "tag multitag", text: "Choose " + need + " answers" }));
       area.appendChild(h("h1", { class: "qtext", text: q.q }));
       var fb = h("div", { class: "feedback", role: "status", "aria-live": "polite" });
-      var list = h("div", { class: "options", role: "group", "aria-label": "Answer options" });
+      var instr = h("p", { class: "small instruct", id: "instruct" });
+      var list = h("div", { class: "options", role: multi ? "group" : "radiogroup", "aria-label": multi ? "Choose " + need + " answers" : "Answer options", "aria-describedby": "instruct" });
       var btns = item.opts.map(function (o, idx) {
-        var b = h("button", { class: "option", type: "button", "data-i": idx, onclick: function () { choose(idx); } },
-          h("span", { class: "key", text: String(idx + 1) }), h("span", { class: "otext", text: o.t }));
+        var b = h("button", { class: "option", type: "button", role: multi ? "checkbox" : "radio", "aria-checked": "false", "data-i": idx, onclick: function () { toggle(idx); } },
+          h("span", { class: "key", text: String(idx + 1) }), h("span", { class: "otext", text: o.t }), h("span", { class: "tagr selmark", "aria-hidden": "true", text: "selected" }));
         list.appendChild(b); return b;
       });
-      area.appendChild(list); area.appendChild(fb);
 
-      function choose(idx) {
-        if (answered) return; answered = true;
-        var o = item.opts[idx];
+      var confirmBtn = h("button", { class: "btn primary", type: "button", id: "confirm", text: "Confirm answer (Enter)", onclick: confirm });
+      var hintBtn = h("button", { class: "btn hintbtn", type: "button", onclick: useHint });
+      var hintNote = h("span", { class: "small", role: "status", "aria-live": "polite" });
+      var actions = h("div", { class: "hintbar confirmrow" }, confirmBtn, hintBtn, hintNote);
+      area.appendChild(list); area.appendChild(instr); area.appendChild(actions); area.appendChild(fb);
+
+      function hintUpd() {
+        hintBtn.textContent = hinted ? "Hint used" : budget.left() ? "Give me a hint (" + budget.left() + " left, H)" : "No hints left";
+        hintBtn.disabled = answered || hinted || !budget.left();
+      }
+      function refresh() {
+        btns.forEach(function (b, k) { var on = sel.indexOf(k) >= 0; b.classList.toggle("selected", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
+        instr.textContent = multi
+          ? "Choose " + need + " answers. Selected " + sel.length + " of " + need + ". Press Confirm answer when you are ready."
+          : sel.length ? "Answer selected. Press Confirm answer to check it, or choose a different one." : "Choose one answer, then press Confirm answer.";
+        confirmBtn.disabled = sel.length !== need;
+        hintUpd();
+      }
+      function toggle(idx) {
+        if (answered || ruledOut.indexOf(idx) >= 0) return;
+        var at = sel.indexOf(idx);
+        if (multi) {
+          if (at >= 0) sel.splice(at, 1);
+          else if (sel.length < need) sel.push(idx);
+          else { instr.textContent = "You can only choose " + need + ". Deselect one first."; return; }
+        } else sel = [idx];
+        refresh();
+      }
+      function useHint() {
+        if (answered || hinted || !budget.spend()) return;
+        hinted = true;
+        var wrongIdx = [];
+        item.opts.forEach(function (o, k) { if (!o.ok) wrongIdx.push(k); });
+        ruledOut = A.shuffle(wrongIdx).slice(0, 2);
+        ruledOut.forEach(function (k) {
+          var at = sel.indexOf(k); if (at >= 0) sel.splice(at, 1);
+          btns[k].classList.add("struck"); btns[k].disabled = true;
+          btns[k].appendChild(h("span", { class: "sr", text: " (ruled out by your hint)" }));
+          btns[k].appendChild(h("span", { class: "tagr", "aria-hidden": "true", text: "ruled out" }));
+        });
+        hintNote.textContent = "Two wrong answers are crossed out. Hints used: " + budget.used() + " of " + budget.max + ".";
+        refresh();
+        A.announce("Hint used. Two wrong answers are crossed out.");
+      }
+      function confirm() {
+        if (answered || sel.length !== need) return; answered = true;
+        var found = sel.filter(function (k) { return item.opts[k].ok; }).length, ok = found === need;
         var rec = A.data.quiz.q[q.id] || (A.data.quiz.q[q.id] = { right: 0, wrong: 0 });
         byTopic[q.topic] = byTopic[q.topic] || { right: 0, total: 0 };
         byTopic[q.topic].total += 1;
-        if (o.ok) { score++; rec.right++; byTopic[q.topic].right++; } else { rec.wrong++; missed.push(item); }
+        if (ok) { score++; rec.right++; byTopic[q.topic].right++; } else { rec.wrong++; missed.push(item); }
         A.save();
         btns.forEach(function (b, k) {
-          b.disabled = true;
-          if (item.opts[k].ok) b.classList.add("right");
-          else if (k === idx) b.classList.add("wrong");
+          var picked = sel.indexOf(k) >= 0, right = item.opts[k].ok;
+          b.disabled = true; b.classList.remove("selected");
+          if (right) b.classList.add("right"); else if (picked) b.classList.add("wrong");
+          var lab = right ? (picked ? "Correct" : "Correct answer") : picked ? "Your choice" : "";
+          if (lab) b.appendChild(h("span", { class: "tagr result", text: lab }));
         });
-        fb.className = "feedback " + (o.ok ? "ok" : "bad");
-        fb.appendChild(h("p", {}, h("strong", { text: o.ok ? "Correct. " : "Not quite. " }), o.ok ? "" : "The answer is: " + q.right + ". ", q.why));
+        confirmBtn.style.display = "none"; hintBtn.style.display = "none"; instr.textContent = "";
+        fb.className = "feedback " + (ok ? "ok" : "bad");
+        var lead = ok ? "Correct. " : multi ? "Not quite. You found " + found + " of " + need + ". The answers are: " + answerText(q) + ". " : "Not quite. The answer is: " + q.right + ". ";
+        fb.appendChild(h("p", {}, h("strong", { text: lead }), q.why));
         if (q.kb && A.kbById[q.kb]) fb.appendChild(h("p", {}, h("a", { href: "#/learn/entry/" + q.kb, text: "Revise: " + A.kbById[q.kb].term })));
         var nextBtn = h("button", { class: "btn primary", type: "button", id: "next", text: i + 1 < run.length ? "Next question (Enter)" : "See results (Enter)", onclick: next });
         fb.appendChild(nextBtn); nextBtn.focus({ preventScroll: true });
-        A.announce(o.ok ? "Correct" : "Incorrect. The answer is " + q.right);
+        A.announce(ok ? "Correct" : "Incorrect. " + (multi ? "The answers are " : "The answer is ") + answerText(q));
       }
+      refresh();
       A.keyHandler = function (ev) {
         if (ev.target && /input|textarea|select/i.test(ev.target.tagName)) return;
-        if (!answered && /^[1-4]$/.test(ev.key)) { var n = parseInt(ev.key, 10) - 1; if (item.opts[n]) choose(n); }
-        else if (answered && ev.key === "Enter") { ev.preventDefault(); next(); }
+        if (!answered && /^[1-9]$/.test(ev.key)) { var n = parseInt(ev.key, 10) - 1; if (item.opts[n]) toggle(n); }
+        else if (!answered && (ev.key === "h" || ev.key === "H")) useHint();
+        else if (ev.key === "Enter") { ev.preventDefault(); if (answered) next(); else confirm(); }
       };
     }
     function next() { i++; if (i < run.length) draw(); else finish(); }
     function finish() {
       A.keyHandler = null; A.clear(area);
       var p = A.pct(score, run.length);
-      A.data.quiz.runs.push({ d: new Date().toISOString().slice(0, 10), t: topic, s: score, n: run.length });
+      A.data.quiz.runs.push({ d: new Date().toISOString().slice(0, 10), t: topic, s: score, n: run.length, h: budget.used() });
       if (A.data.quiz.runs.length > 40) A.data.quiz.runs.shift();
       A.save();
       var msg = p >= 80 ? "Strong result." : p >= 60 ? "Good. A little more revision will lift it." : "Keep going. Review the explanations below, then try again.";
       area.appendChild(h("div", { class: "card summary" }, h("h1", { text: "Quiz finished" }),
-        h("p", { class: "bigscore", text: score + " out of " + run.length + " (" + p + "%)" }), h("p", { text: msg })));
+        h("p", { class: "bigscore", text: score + " out of " + run.length + " (" + p + "%)" }), h("p", { text: msg }),
+        h("p", { class: "small", text: "Hints used: " + budget.used() + " of " + budget.max + "." })));
       var tkeys = Object.keys(byTopic);
       if (tkeys.length > 1) {
         var b = h("div", { class: "card" }, h("h2", { text: "By topic" }));
@@ -122,7 +178,7 @@
       if (missed.length) {
         var m = h("div", { class: "card" }, h("h2", { text: "Questions to review" }));
         missed.forEach(function (it) {
-          m.appendChild(h("div", { class: "review" }, h("p", {}, h("strong", { text: it.q.q })), h("p", {}, "Answer: ", it.q.right), h("p", { class: "small", text: it.q.why }),
+          m.appendChild(h("div", { class: "review" }, h("p", {}, h("strong", { text: it.q.q })), h("p", {}, (it.q.multi ? "Answers: " : "Answer: "), answerText(it.q)), h("p", { class: "small", text: it.q.why }),
             it.q.kb && A.kbById[it.q.kb] ? h("a", { href: "#/learn/entry/" + it.q.kb, text: "Revise: " + A.kbById[it.q.kb].term }) : null));
         });
         area.appendChild(m);
@@ -236,6 +292,49 @@
     main.appendChild(h("div", { class: "prompt" }, h("strong", { text: "Task: " }), task.prompt));
     if (task.tip) main.appendChild(h("p", { class: "tip" }, h("strong", { text: "Tip: " }), task.tip));
 
+    /* Examiner guidance: command word, a plan, and what the reports say. Shown or hidden by the header switch. */
+    var gd = U14.guidance && U14.guidance[task.id];
+    if (gd) {
+      var parts = task.command.split(/\s+and\s+|\s*\/\s*/i), cws = [];
+      parts.forEach(function (pt) { T.commandWords.forEach(function (w) { if (w.word.toLowerCase().indexOf(pt.trim().toLowerCase()) >= 0 && cws.indexOf(w) < 0) cws.push(w); }); });
+      var themes = (gd.themes || []).map(function (n) { return T.reportThemes.filter(function (t) { return t.theme === n; })[0]; }).filter(Boolean);
+      var gp = h("details", { class: "guidance", open: true },
+        h("summary", {}, h("strong", { text: "Examiner guidance: how to answer this" })));
+      cws.forEach(function (w) {
+        gp.appendChild(h("p", {}, h("strong", { text: "The command word is " + w.word + ". " }), w.means + " ", h("span", { class: "sub", text: "Common trap: " + w.trap })));
+      });
+      gp.appendChild(h("h3", { text: "Build your answer like this" }));
+      gp.appendChild(h("ol", {}, gd.plan.map(function (x) { return h("li", { text: x }); })));
+      gp.appendChild(h("p", { class: "small", text: task.marks + " marks means about " + task.marks + " separate points. Each point needs a reason, not just a name." }));
+      if (themes.length) {
+        gp.appendChild(h("h3", { text: "What examiner reports say" }));
+        gp.appendChild(h("ul", {}, themes.map(function (t) { return h("li", {}, h("strong", { text: t.theme + ". " }), t.detail); })));
+        gp.appendChild(h("p", { class: "small" }, h("a", { href: "#/coach/reports", text: "More from the examiner reports" })));
+      }
+      main.appendChild(gp);
+    }
+
+    /* Hints: revealed in order, up to the session limit */
+    var hintTexts = (U14.hints && U14.hints[task.id]) || [], hb = A.hintBudget(), hintShown = 0;
+    var hintList = h("ol", { class: "hintlist" });
+    var hintNote = h("p", { class: "small hintnote" });
+    var hintBtn = h("button", { class: "btn hintbtn", type: "button", onclick: showHint });
+    var hintBox = h("div", { class: "hintbox", "aria-live": "polite" }, hintList, hintNote);
+    function hintUpd() {
+      var avail = Math.min(hb.max, hintTexts.length);
+      hintBtn.textContent = hintShown >= avail ? "No hints left" : "Give me a hint (" + (avail - hintShown) + " left)";
+      hintBtn.disabled = hintShown >= avail;
+      hintNote.textContent = hintShown ? "Hints used: " + hintShown + " of " + hb.max + ". Try the hint, then write more before you check." : "";
+      hintBox.style.display = hintShown ? "" : "none";
+    }
+    function showHint() {
+      if (hintShown >= hintTexts.length || !hb.spend()) return;
+      hintList.appendChild(h("li", { text: hintTexts[hintShown] }));
+      hintShown++; hintUpd();
+      A.announce("Hint " + hintShown + ": " + hintTexts[hintShown - 1]);
+    }
+    if (hintTexts.length) { main.appendChild(h("div", { class: "hintbar" }, hintBtn, h("span", { class: "small", text: "Have a go first. You get " + hb.max + " hints for this task." }))); main.appendChild(hintBox); hintUpd(); }
+
     var ta = h("textarea", { id: "ans", class: "answer", rows: "12", "aria-label": "Your answer", placeholder: "Write your answer here. Aim for about " + task.marks * 25 + " words, with reasons and scenario facts." });
     ta.value = st.text || "";
     var wc = h("span", { class: "small", id: "wc" });
@@ -332,7 +431,7 @@
     main.appendChild(A.backLink("All practice tasks", "practice"));
     main.appendChild(A.pageHead("Describe, benefit or implication?", "Read each statement and decide what it is. Activity 5 rewards implications: what changes, what must be done, who does it."));
     var area = h("div", { class: "quizrun" }); main.appendChild(area);
-    var deck = A.shuffle(U14.sorter), i = 0, score = 0, missed = [], answered = false;
+    var deck = A.shuffle(U14.sorter), i = 0, score = 0, missed = [], answered = false, budget = A.hintBudget();
     function draw() {
       A.clear(area); answered = false;
       var s = deck[i];
@@ -345,9 +444,30 @@
         var b = h("button", { class: "option", type: "button", onclick: function () { pick(t[0], k); } }, h("span", { class: "key", text: String(k + 1) }), h("span", { class: "otext" }, h("strong", { text: t[1] }), h("span", { class: "sub", text: t[2] })));
         list.appendChild(b); return b;
       });
-      area.appendChild(list); area.appendChild(fb);
+      var hinted = false, ruled = -1;
+      var hintBtn = h("button", { class: "btn hintbtn", type: "button", onclick: useHint });
+      var hintNote = h("span", { class: "small", role: "status", "aria-live": "polite" });
+      var hintRow = h("div", { class: "hintbar" }, hintBtn, hintNote);
+      function hintUpd() {
+        hintBtn.textContent = hinted ? "Hint used" : budget.left() ? "Give me a hint (" + budget.left() + " left, H)" : "No hints left";
+        hintBtn.disabled = answered || hinted || !budget.left();
+        if (answered) hintBtn.style.display = "none";
+      }
+      function useHint() {
+        if (answered || hinted || !budget.spend()) return;
+        hinted = true;
+        var wrong = []; TYPES.forEach(function (t, n) { if (t[0] !== s.type) wrong.push(n); });
+        ruled = wrong[Math.floor(Math.random() * wrong.length)];
+        btns[ruled].classList.add("struck"); btns[ruled].disabled = true;
+        btns[ruled].appendChild(h("span", { class: "sr", text: " (ruled out by your hint)" }));
+        btns[ruled].appendChild(h("span", { class: "ruled", "aria-hidden": "true", text: "ruled out" }));
+        hintNote.textContent = "One wrong type is crossed out. Hints used: " + budget.used() + " of " + budget.max + ".";
+        hintUpd(); A.announce("Hint used. One wrong type is crossed out.");
+      }
+      hintUpd();
+      area.appendChild(list); area.appendChild(hintRow); area.appendChild(fb);
       function pick(type, k) {
-        if (answered) return; answered = true;
+        if (answered || k === ruled) return; answered = true; hintUpd();
         var ok = type === s.type;
         if (ok) score++; else missed.push(s);
         btns.forEach(function (b, n) { b.disabled = true; if (TYPES[n][0] === s.type) b.classList.add("right"); else if (n === k) b.classList.add("wrong"); });
@@ -358,6 +478,7 @@
       }
       A.keyHandler = function (ev) {
         if (!answered && /^[1-3]$/.test(ev.key)) { var n = parseInt(ev.key, 10) - 1; pick(TYPES[n][0], n); }
+        else if (!answered && (ev.key === "h" || ev.key === "H")) useHint();
         else if (answered && ev.key === "Enter") { ev.preventDefault(); next(); }
       };
     }
@@ -366,7 +487,8 @@
       A.keyHandler = null; A.clear(area);
       A.data.sorter.plays += 1; if (score > A.data.sorter.best) A.data.sorter.best = score; A.save();
       area.appendChild(h("div", { class: "card summary" }, h("h2", { text: "Finished" }), h("p", { class: "bigscore", text: score + " out of " + deck.length }),
-        h("p", { text: "Your best is " + A.data.sorter.best + ". Remember: an implication always answers 'so what must happen now?'" })));
+        h("p", { text: "Your best is " + A.data.sorter.best + ". Remember: an implication always answers 'so what must happen now?'" }),
+        h("p", { class: "small", text: "Hints used: " + budget.used() + " of " + budget.max + "." })));
       if (missed.length) {
         var m = h("div", { class: "card" }, h("h2", { text: "Review" }));
         missed.forEach(function (s) { m.appendChild(h("div", { class: "review" }, h("p", {}, h("strong", { text: s.text })), h("p", { class: "small", text: "It is a " + s.type + ". " + s.why }))); });

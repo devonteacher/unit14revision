@@ -7,6 +7,8 @@
     var p = A.data.prefs || {};
     root.setAttribute("data-theme", p.theme || "light");
     root.style.fontSize = (p.size || 100) + "%";
+    root.setAttribute("data-guidance", A.guidanceOn() ? "on" : "off");
+    root.setAttribute("data-dyslexia", A.dyslexiaOn() ? "on" : "off");
   }
   applyPrefs();
 
@@ -29,11 +31,22 @@
     var sel = h("select", { id: "theme", class: "select small-select", "aria-label": "Colour theme", onchange: function () { A.data.prefs.theme = sel.value; A.save(); applyPrefs(); } },
       [["light", "Light"], ["cream", "Cream"], ["dark", "Dark"]].map(function (o) { return h("option", { value: o[0], text: o[1], selected: (A.data.prefs.theme || "light") === o[0] }); }));
     function size(delta) { var v = Math.max(85, Math.min(150, (A.data.prefs.size || 100) + delta)); A.data.prefs.size = v; A.save(); applyPrefs(); }
+    var gbtn = h("button", { class: "iconbtn togglebtn", type: "button", "aria-pressed": String(A.guidanceOn()), onclick: function () {
+      A.data.prefs.guidance = !A.guidanceOn(); A.save(); applyPrefs();
+      gbtn.setAttribute("aria-pressed", String(A.guidanceOn())); gbtn.textContent = "Examiner guidance: " + (A.guidanceOn() ? "On" : "Off");
+      A.announce("Examiner guidance " + (A.guidanceOn() ? "on" : "off"));
+    } }, "Examiner guidance: " + (A.guidanceOn() ? "On" : "Off"));
+    ctl.appendChild(gbtn);
+    var dbtn = h("button", { class: "iconbtn togglebtn", type: "button", "aria-pressed": String(A.dyslexiaOn()), onclick: function () {
+      A.data.prefs.dyslexia = !A.dyslexiaOn(); A.save(); applyPrefs();
+      dbtn.setAttribute("aria-pressed", String(A.dyslexiaOn())); dbtn.textContent = "Dyslexia friendly: " + (A.dyslexiaOn() ? "On" : "Off");
+      A.announce("Dyslexia friendly mode " + (A.dyslexiaOn() ? "on" : "off"));
+    } }, "Dyslexia friendly: " + (A.dyslexiaOn() ? "On" : "Off"));
+    ctl.appendChild(dbtn);
     ctl.appendChild(h("label", { class: "sr", for: "theme", text: "Colour theme" }));
     ctl.appendChild(sel);
     ctl.appendChild(h("button", { class: "iconbtn", type: "button", "aria-label": "Make text smaller", text: "A−", onclick: function () { size(-10); } }));
     ctl.appendChild(h("button", { class: "iconbtn", type: "button", "aria-label": "Make text larger", text: "A+", onclick: function () { size(10); } }));
-    ctl.appendChild(h("button", { class: "iconbtn", type: "button", "aria-label": "Print this page", text: "Print", onclick: function () { window.print(); } }));
   }
 
   function buildFooter() {

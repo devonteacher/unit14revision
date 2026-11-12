@@ -11,6 +11,15 @@ U14.config = {
   updated: "November 2026",
   storageKey: "u14rb_v1",
 
+  /* HINTS
+     How many hints a student can use in one quiz, one practice task or one sorter game. */
+  hintsPerSession: 3,
+
+  /* EXAMINER GUIDANCE
+     The Examiner guidance switch in the header shows how to answer each practice task.
+     This sets whether it starts On or Off for a student who has not chosen yet. */
+  guidanceDefault: true,
+
   /* ASSESSMENT LOCK
      The real Part A and Part B must be done without guidance from teachers.
      Add the dates of your live window below and the whole tool is replaced by a

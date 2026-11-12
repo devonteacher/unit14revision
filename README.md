@@ -11,13 +11,14 @@ It was built for the Cyber and Digital Technologies faculty at Exeter College to
 | Ask | Type a question in your own words. A built in search matches it to the revision bank. Handles typos, "X or Y?", "difference between X and Y", "quiz me on ..." and "flashcards for ...". |
 | Learn | 155 short entries across 13 topics, each with a plain explanation, bullet points, an example and a link to the spec section. Four small visuals (lifecycle, value chain, three Vs, cloud responsibility table). |
 | Flashcards | Flip cards by topic. Cards marked "still learning" come up more often. |
-| Quiz | 110 multiple choice questions with an explanation after every answer, topic filters, retry missed questions. |
+| Quiz | 127 questions (17 ask for two or three answers) with a Confirm answer step, an explanation after every answer, topic filters and retry missed questions. |
 | Practice | 17 written tasks (theory, Quay Cycles mini activities, a Jaten Part A planning task). Instant feedback shows which expected points are missing, highlights scenario facts, technical terms and reasoning words, then a self mark checklist and a model answer. Also a game that sorts statements into describe, benefit or implication. |
+| Start here | A two minute guide to every part of the site, including how hints and examiner guidance work. |
 | Past papers | Eight scenario walkthroughs with what to watch for and the lessons from examiner reports, plus the themes that repeat. |
-| Exam coach | Task structure and time plan, a guide to each activity, command words, common mistakes, a checklist adapted from the faculty checklist, and sentence starters. |
+| Exam coach | Task structure and time plan, a guide to each activity, an Examiner reports page by activity, command words, common mistakes, a checklist adapted from the faculty checklist, and sentence starters. |
 | Progress | Scores by topic, what to revise next, export and import of progress. Saved only in the student's own browser. |
 
-Other features: three themes (light, cream, dark), text size buttons, keyboard control (keys 1 to 4 in the quiz, space to flip cards), skip link, A4 print stylesheet, works in an iframe.
+Other features: a Dyslexia friendly switch (plain typeface, wider spacing, cream background, shorter lines), hints (three per quiz, practice task or sorter game, set by `hintsPerSession` in `js/config.js`), an Examiner guidance switch that shows the command word, an answer plan and examiner report messages on every practice task (content in `js/data/guidance.js` and `js/data/hints.js`), three themes (light, cream, dark), text size buttons, keyboard control (keys 1 to 4 in the quiz, space to flip cards), skip link, works in an iframe.
 
 ## Quick start
 

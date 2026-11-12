@@ -69,6 +69,23 @@
     var t = U14.topics.filter(function (x) { return x.id === id; })[0];
     return t ? t.colour : "#1f4e9c";
   };
+  A.guidanceOn = function () {
+    var g = A.data.prefs && A.data.prefs.guidance;
+    return g === undefined ? U14.config.guidanceDefault !== false : !!g;
+  };
+
+  A.dyslexiaOn = function () { return !!(A.data.prefs && A.data.prefs.dyslexia); };
+
+  /* Hints: each quiz, practice task or sorter game gets its own small budget. */
+  A.hintBudget = function () {
+    var max = U14.config.hintsPerSession || 3, used = 0;
+    return {
+      max: max,
+      used: function () { return used; },
+      left: function () { return max - used; },
+      spend: function () { if (used >= max) return false; used++; return true; }
+    };
+  };
   A.announce = function (msg) {
     var r = document.getElementById("live");
     if (r) { r.textContent = ""; setTimeout(function () { r.textContent = msg; }, 20); }

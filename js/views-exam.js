@@ -22,13 +22,14 @@
         h("strong", { text: x.org }), h("span", { class: "sub", text: x.series }), h("span", { class: "sub", text: x.sector }));
     })));
     main.appendChild(h("h2", { class: "group", text: "What examiners keep saying" }));
+    main.appendChild(h("p", {}, h("a", { class: "btn", href: "#/coach/reports", text: "See it activity by activity, with how to answer" })));
     main.appendChild(h("div", { class: "card" }, h("dl", { class: "themes" }, T.reportThemes.map(function (t) {
       return [h("dt", { text: t.theme }), h("dd", { text: t.detail })];
     }))));
   };
 
   /* ================= EXAM COACH ================= */
-  var TABS = [["plan", "Structure and timing"], ["activities", "Activity guides"], ["words", "Command words"], ["mistakes", "Common mistakes"], ["checklist", "Checklist"], ["starters", "Sentence starters"]];
+  var TABS = [["plan", "Structure and timing"], ["activities", "Activity guides"], ["reports", "Examiner reports"], ["words", "Command words"], ["mistakes", "Common mistakes"], ["checklist", "Checklist"], ["starters", "Sentence starters"]];
 
   R.coach = function (main, parts) {
     var tab = parts[0] || "plan";
@@ -37,7 +38,7 @@
       return h("a", { href: "#/coach/" + t[0], "aria-current": t[0] === tab ? "page" : false, text: t[1] });
     })));
     var body = h("div", { class: "coach-body" }); main.appendChild(body);
-    ({ plan: plan, activities: activities, words: words, mistakes: mistakes, checklist: checklist, starters: starters }[tab] || plan)(body);
+    ({ plan: plan, activities: activities, reports: reports, words: words, mistakes: mistakes, checklist: checklist, starters: starters }[tab] || plan)(body);
   };
 
   function plan(b) {
@@ -92,6 +93,33 @@
         }))))));
   }
 
+  function reports(b) {
+    b.appendChild(h("section", { class: "card note" }, h("h2", { text: "What examiners keep telling students" }),
+      h("p", { text: "The reports from different series say the same things. Here they are for each activity, with how to answer and what earns the marks. Switch on Examiner guidance at the top to see the same advice on every practice task." }),
+      h("p", { class: "small", text: "Summarised in our own words. Always read the full report for your own series with your tutor." })));
+    T.activityGuides.forEach(function (g) {
+      var themes = T.reportThemes.filter(function (t) { return t.acts && t.acts.indexOf(g.activity) >= 0; });
+      var task = U14.practice.filter(function (p) { return p.activity === g.activity && p.scenario === "quay"; })[0];
+      var c = h("section", { class: "card report" },
+        h("h2", { text: "Activity " + g.activity + ": " + g.title }),
+        h("p", { class: "sub", text: g.marks + " marks, about " + g.time }));
+      c.appendChild(h("h3", { text: "What examiners report" }));
+      c.appendChild(h("ul", {}, themes.map(function (t) { return h("li", {}, h("strong", { text: t.theme + ". " }), t.detail); })));
+      c.appendChild(h("h3", { text: "How to answer it" }));
+      c.appendChild(h("ol", {}, g.structure.map(function (x) { return h("li", { text: x }); })));
+      c.appendChild(h("div", { class: "two" },
+        h("div", { class: "good" }, h("h3", { text: "Earns marks" }), h("ul", {}, g.higher.map(function (x) { return h("li", { text: x }); }))),
+        h("div", { class: "weak" }, h("h3", { text: "Loses marks" }), h("ul", {}, g.lower.map(function (x) { return h("li", { text: x }); })))));
+      if (task) c.appendChild(h("p", {}, h("a", { class: "btn", href: "#/practice/" + task.id, text: "Practise Activity " + g.activity }), " ", h("a", { class: "btn", href: "#/coach/activities", text: "Full activity guide" })));
+      b.appendChild(c);
+    });
+    b.appendChild(h("section", { class: "card" }, h("h2", { text: "Lessons from each paper" }),
+      h("p", { text: "Open a past paper to see what made that scenario tricky and what its examiner report said." }),
+      h("div", { class: "topic-grid" }, U14.papers.map(function (x) {
+        return h("a", { class: "topic-card", href: "#/papers/" + x.id }, h("strong", { text: x.org }), h("span", { class: "sub", text: x.series }));
+      }))));
+  }
+
   function mistakes(b) {
     b.appendChild(h("div", { class: "card" }, h("p", { text: "These come up again and again in examiner reports." }),
       T.mistakes.map(function (m) {
@@ -116,8 +144,7 @@
       b.appendChild(c);
     });
     upd();
-    b.appendChild(h("div", { class: "row-actions" }, h("button", { class: "btn", type: "button", text: "Print checklist", onclick: function () { window.print(); } }), " ",
-      h("button", { class: "btn", type: "button", text: "Untick everything", onclick: function () { if (window.confirm("Untick everything?")) { A.data.checklist = {}; A.save(); A.render(); } } })));
+    b.appendChild(h("div", { class: "row-actions" }, h("button", { class: "btn", type: "button", text: "Untick everything", onclick: function () { if (window.confirm("Untick everything?")) { A.data.checklist = {}; A.save(); A.render(); } } })));
   }
 
   function starters(b) {
